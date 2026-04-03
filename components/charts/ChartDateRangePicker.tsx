@@ -18,7 +18,7 @@ export type ChartDateRangePickerProps = {
 
 
 const mobileFullWidthDateRoot =
-  "[&_.react-datepicker-wrapper]:block [&_.react-datepicker-wrapper]:w-full [&_.react-datepicker-wrapper]:min-w-0 [&_.react-datepicker__input-container]:flex [&_.react-datepicker__input-container]:w-full [&_.react-datepicker__input-container]:min-w-0 [&_.react-datepicker__input-container]:max-w-full [&_.react-datepicker__input-container]:items-center [&_input]:box-border [&_input]:w-full";
+  "[&_.react-datepicker-wrapper]:block [&_.react-datepicker-wrapper]:w-full [&_.react-datepicker-wrapper]:min-w-0 [&_.react-datepicker__input-container]:relative [&_.react-datepicker__input-container]:w-full [&_.react-datepicker__input-container]:min-w-0 [&_.react-datepicker__input-container]:max-w-full [&_.react-datepicker__close-icon]:z-10 [&_input]:box-border [&_input]:w-full";
 
 
 const inputWidthShared =

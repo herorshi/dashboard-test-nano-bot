@@ -10,11 +10,15 @@ import {
   PiePortfolioChart,
 } from "@/components/charts/DashboardCharts";
 import {
-  ChartFilterToolbar, // icon filter
+  ChartFilterToolbar,
   type ChartFilter,
   type ChartId,
-  CHART_IDS, // id chart
+  CHART_IDS,
 } from "@/components/dashboard/ChartFilterToolbar";
+import {
+  DisplayModeToolbar,
+  type DashboardDisplayMode,
+} from "@/components/dashboard/DisplayModeToolbar";
 import { GlobalChartDateRangeBar } from "@/components/dashboard/GlobalChartDateRangeBar";
 import { OrdersDataTable } from "@/components/table/DataTable";
 import { Widget } from "@/components/widget/Widget";
@@ -24,12 +28,18 @@ import { GlobalChartDateRangeProvider } from "@/contexts/GlobalChartDateRangeCon
 import {
   DndContext,
   type DragEndEvent,
+  type SensorDescriptor,
+  KeyboardSensor,
   PointerSensor,
   closestCenter,
+  useSensor,
+  useSensors,
 } from "@dnd-kit/core";
 import {
   SortableContext,
   arrayMove,
+  rectSortingStrategy,
+  sortableKeyboardCoordinates,
   useSortable,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
@@ -37,16 +47,9 @@ import { CSS } from "@dnd-kit/utilities";
 import type { HTMLAttributes } from "react";
 import { useState } from "react";
 
-/** Pointer + activation 8px; ไม่พึ่ง default sensors (มี KeyboardSensor) */
-const CHART_DND_SENSORS = [
-  {
-    sensor: PointerSensor,
-    options: { activationConstraint: { distance: 8 } },
-  },
-];
-
-
 const DND_CONTEXT_ID = "dashboard-trading-dnd";
+/** แยก context เฉพาะกริดกราฟ — ไม่รวมกับ section (vertical) เพื่อลดการกระตุกตอนลากการ์ด */
+const CHART_GRID_DND_ID = "dashboard-chart-grid-dnd";
 
 const SECTION_IDS = ["charts", "table"] as const;
 type SectionId = (typeof SECTION_IDS)[number];
@@ -138,7 +141,7 @@ const sectionDragIconButtonClass =
   "inline-flex min-w-12 shrink-0 cursor-grab touch-none select-none items-center justify-center rounded-xl border border-sky-200/90 bg-white/90 px-5 py-2.5 text-slate-500 shadow-sm ring-1 ring-white/80 transition-colors hover:bg-sky-50/90 hover:text-slate-700 active:cursor-grabbing focus-visible:outline focus-visible:ring-2 focus-visible:ring-teal-400/45";
 
 const SECTION_DRAG_TOOLTIP_CHARTS =
-  "ลากเพื่อสลับตำแหน่งกับตารางคำสั่งซื้อขาย — เลือกช่วงวันที่และประเภทกราฟจากแถบด้านล่างหัวข้อ — ลากหัวการ์ดเพื่อสลับลำดับ";
+  "ลากเพื่อสลับตำแหน่งกับตารางคำสั่งซื้อขาย — โหมดแสดงผลต้องเป็น «ทั้งหมด» — เลือกช่วงวันที่ ประเภทกราฟ และโหมดแสดงผลจากหัวขอกราฟภาพรวม/แถบด้านบน — ลากหัวการ์ดเพื่อสลับลำดับ";
 const SECTION_DRAG_TOOLTIP_TABLE =
   "ลากเพื่อสลับตำแหน่งกับกราฟ — คลิกแถวเพื่อดูรายละเอียด — ลากขอบหัวคอลัมน์เพื่อปรับความกว้าง";
 
@@ -179,14 +182,18 @@ function SectionDragWithTooltip({
 
 function SortableChartsBlock({
   filter,
-  onFilterChange,
   singleId,
   order,
+  onChartFilterChange,
+  sensors,
+  onChartDragEnd,
 }: {
   filter: ChartFilter;
-  onFilterChange: (v: ChartFilter) => void;
   singleId: ChartId | null;
   order: ChartId[];
+  onChartFilterChange: (v: ChartFilter) => void;
+  sensors: SensorDescriptor<any>[];
+  onChartDragEnd: (event: DragEndEvent) => void;
 }) {
   const {
     attributes,
@@ -216,8 +223,8 @@ function SortableChartsBlock({
       aria-labelledby="dashboard-charts-heading"
       className={
         filter === "all"
-          ? "min-w-0 space-y-4 "
-          : "w-full min-w-0 space-y-4 "
+          ? "min-w-0 space-y-4"
+          : "w-full min-w-0 space-y-4"
       }
     >
       <div className="flex min-w-0 items-start gap-3">
@@ -225,37 +232,42 @@ function SortableChartsBlock({
           tooltipText={SECTION_DRAG_TOOLTIP_CHARTS}
           dragProps={sectionDragProps}
         />
-        <div className="min-w-0 flex-1 pt-0.5">
-          <h2
-            id="dashboard-charts-heading"
-            className="text-lg font-semibold tracking-tight text-slate-800"
-          >
-            กราฟภาพรวม
-          </h2>
-        </div>
-      </div>
-
-      {/*
-        ต่ำกว่า xl (~iPad แนวนอนส่วนใหญ่): แยกบรรทัด + date เต็มความกว้าง
-        xl ขึ้นไป (เดสก์ท็อปกว้าง): แถวเดียวกัน + กว้างตามเนื้อหา
-      */}
-      <div className="flex min-w-0 flex-col gap-3 xl:flex-row xl:flex-wrap xl:items-center xl:gap-2">
-        <div className="min-w-0 w-full max-w-full xl:w-fit xl:max-w-full xl:shrink-0">
-          <ChartFilterToolbar value={filter} onChange={onFilterChange} />
-        </div>
-        <div className="w-full min-w-0 xl:ml-auto xl:w-auto xl:shrink-0">
-          <GlobalChartDateRangeBar />
-        </div>
-      </div>
-
-      {filter === "all" ? (
-        <SortableContext items={order}>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            {order.map((id) => (
-              <SortableChartCard key={id} id={id} />
-            ))}
+        <div className="min-w-0 flex-1">
+          <div className="flex min-w-0 flex-nowrap items-center gap-x-3 overflow-x-auto pb-0.5 [scrollbar-width:thin]">
+            <h2
+              id="dashboard-charts-heading"
+              className="shrink-0 pt-0.5 text-lg font-semibold tracking-tight text-slate-800"
+            >
+              กราฟภาพรวม
+            </h2>
+            <div className="min-w-0 shrink [&_[role=toolbar]]:!inline-block [&_[role=toolbar]]:!w-max [&_[role=toolbar]]:max-w-none">
+              <ChartFilterToolbar
+                value={filter}
+                onChange={onChartFilterChange}
+              />
+            </div>
+            <div className="ml-auto min-w-0 shrink-0 sm:max-w-[min(100%,28rem)]">
+              <GlobalChartDateRangeBar />
+            </div>
           </div>
-        </SortableContext>
+        </div>
+      </div>
+      
+      {filter === "all" ? (
+        <DndContext
+          id={CHART_GRID_DND_ID}
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={onChartDragEnd}
+        >
+          <SortableContext items={order} strategy={rectSortingStrategy}>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              {order.map((id) => (
+                <SortableChartCard key={id} id={id} />
+              ))}
+            </div>
+          </SortableContext>
+        </DndContext>
       ) : (
         <div className="w-full min-w-0">
           {singleId ? <ChartWidget id={singleId} /> : null}
@@ -325,35 +337,49 @@ function bumpChartsReflow() {
 }
 
 export function TradingDashboard() {
-  const [filter, setFilter] = useState<ChartFilter>("all");
+  const [chartFilter, setChartFilter] = useState<ChartFilter>("all");
+  const [displayMode, setDisplayMode] =
+    useState<DashboardDisplayMode>("all");
   const [order, setOrder] = useState<ChartId[]>([...CHART_IDS]);
   const [sectionOrder, setSectionOrder] = useState<SectionId[]>([
     ...SECTION_IDS,
   ]);
   const [dndLayoutTick, setDndLayoutTick] = useState(0);
 
-  function handleDragEnd(event: DragEndEvent) {
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 8 },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
+  );
+
+  function handleSectionDragEnd(event: DragEndEvent) {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
 
     const activeId = String(active.id);
     const overId = String(over.id);
 
-    if (isSectionId(activeId) && isSectionId(overId)) {
-      setSectionOrder((items) => {
-        const a = items.indexOf(activeId);
-        const b = items.indexOf(overId);
-        if (a === -1 || b === -1) return items;
-        return arrayMove(items, a, b);
-      });
-      setDndLayoutTick((n) => n + 1);
-      bumpChartsReflow();
-      return;
-    }
+    if (!isSectionId(activeId) || !isSectionId(overId)) return;
+    if (displayMode !== "all") return;
+    setSectionOrder((items) => {
+      const a = items.indexOf(activeId);
+      const b = items.indexOf(overId);
+      if (a === -1 || b === -1) return items;
+      return arrayMove(items, a, b);
+    });
+    setDndLayoutTick((n) => n + 1);
+    bumpChartsReflow();
+  }
 
-    if (filter !== "all") return;
-    const a = activeId as ChartId;
-    const b = overId as ChartId;
+  function handleChartDragEnd(event: DragEndEvent) {
+    if (chartFilter !== "all" || displayMode === "table") return;
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const a = String(active.id) as ChartId;
+    const b = String(over.id) as ChartId;
     if (!CHART_IDS.includes(a) || !CHART_IDS.includes(b)) return;
     setOrder((items) => {
       const ia = items.indexOf(a);
@@ -365,41 +391,78 @@ export function TradingDashboard() {
     bumpChartsReflow();
   }
 
-  const singleId = filter !== "all" ? filter : null;
+  const singleId: ChartId | null =
+    chartFilter !== "all" ? chartFilter : null;
+
+  const sortableSectionItems: SectionId[] =
+    displayMode === "all"
+      ? sectionOrder
+      : displayMode === "charts"
+        ? ["charts"]
+        : ["table"];
 
   return (
     <GlobalChartDateRangeProvider>
-      <ChartExpandProvider value={filter !== "all"}>
+      <ChartExpandProvider value={chartFilter !== "all"}>
         <div className="flex min-h-0 flex-1 flex-col">
-        <DashboardDndLayoutTickContext.Provider value={dndLayoutTick}>
-          <DndContext
-            id={DND_CONTEXT_ID}
-            sensors={CHART_DND_SENSORS}
-            collisionDetection={closestCenter}
-            onDragEnd={handleDragEnd}
-          >
-            <SortableContext
-              items={sectionOrder}
-              strategy={verticalListSortingStrategy}
+          {/*
+            แถบฟิลเตอร์อยู่นอก DnD — ไม่เลื่อนตามการสลับตำแหน่งกราฟ/ตาราง
+          */}
+          <div className="sticky top-0 z-20 -mx-4 shrink-0 bg-linear-to-b px-4 py-4 shadow-sm shadow-sky-100/40 backdrop-blur-md sm:-mx-6 sm:px-6">
+            <div className="flex w-full min-w-0 flex-col items-start">
+              <div className="min-w-0 w-full max-w-full">
+                <DisplayModeToolbar
+                  value={displayMode}
+                  onChange={setDisplayMode}
+                />
+              </div>
+            </div>
+          </div>
+          <DashboardDndLayoutTickContext.Provider value={dndLayoutTick}>
+            <DndContext
+              id={DND_CONTEXT_ID}
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleSectionDragEnd}
             >
-              <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-10">
-                {sectionOrder.map((sid) =>
-                  sid === "charts" ? (
+              <SortableContext
+                items={sortableSectionItems}
+                strategy={verticalListSortingStrategy}
+              >
+                <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-10">
+                  {displayMode === "table" ? (
+                    <SortableTableBlock key="table" />
+                  ) : displayMode === "charts" ? (
                     <SortableChartsBlock
                       key="charts"
-                      filter={filter}
-                      onFilterChange={setFilter}
+                      filter={chartFilter}
                       singleId={singleId}
                       order={order}
+                      onChartFilterChange={setChartFilter}
+                      sensors={sensors}
+                      onChartDragEnd={handleChartDragEnd}
                     />
                   ) : (
-                    <SortableTableBlock key="table" />
-                  ),
-                )}
-              </div>
-            </SortableContext>
-          </DndContext>
-        </DashboardDndLayoutTickContext.Provider>
+                    sectionOrder.map((sid) =>
+                      sid === "charts" ? (
+                        <SortableChartsBlock
+                          key="charts"
+                          filter={chartFilter}
+                          singleId={singleId}
+                          order={order}
+                          onChartFilterChange={setChartFilter}
+                          sensors={sensors}
+                          onChartDragEnd={handleChartDragEnd}
+                        />
+                      ) : (
+                        <SortableTableBlock key="table" />
+                      ),
+                    )
+                  )}
+                </div>
+              </SortableContext>
+            </DndContext>
+          </DashboardDndLayoutTickContext.Provider>
         </div>
       </ChartExpandProvider>
     </GlobalChartDateRangeProvider>

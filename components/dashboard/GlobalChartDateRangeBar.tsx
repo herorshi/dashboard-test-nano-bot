@@ -26,7 +26,7 @@ export function GlobalChartDateRangeBar() {
   };
 
   return (
-    <div className="block w-full min-w-0 max-w-full xl:block xl:w-full xl:max-w-[12rem]">
+    <div className="inline-block w-max max-w-full min-w-0">
       <ChartDateRangePicker
         variant="inline"
         startDate={globalStart}

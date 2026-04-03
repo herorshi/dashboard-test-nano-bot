@@ -2,11 +2,9 @@
 
 import type { IconDefinition } from "@fortawesome/fontawesome-svg-core";
 import {
-  faChartBar,
-  faChartColumn,
   faChartLine,
-  faChartPie,
-  faTableCells,
+  faLayerGroup,
+  faTable,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -16,38 +14,35 @@ import {
   useState,
 } from "react";
 
-export const CHART_IDS = ["pie", "bar", "line", "column"] as const;
-export type ChartId = (typeof CHART_IDS)[number];
-export type ChartFilter = "all" | ChartId;
+/** โหมดแสดงผลแดชบอร์ด — แยกจากฟิลเตอร์ประเภทกราฟ */
+export type DashboardDisplayMode = "all" | "charts" | "table";
 
-/** แทร็ก glass — ต่ำกว่า xl เต็มความกว้าง; xl+ กว้างตามเนื้อหา (คู่กับแถบใน TradingDashboard) */
+/** ต่ำกว่า xl เต็มความกว้าง; xl+ กว้างตามเนื้อหา (คู่กับแถบใน TradingDashboard) */
 const trackOuter =
-  "block w-full max-w-full min-w-0 text-left rounded-2xl border border-white/70 bg-linear-to-b from-slate-50/95 via-white/60 to-slate-100/70 p-1 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.85),0_8px_32px_-8px_rgba(15,23,42,0.12)] ring-1 ring-slate-200/50 backdrop-blur-md xl:inline-block xl:w-max xl:max-w-full";
+  "block w-full max-w-full min-w-0 rounded-2xl border border-indigo-100/90 bg-linear-to-b from-indigo-50/90 via-violet-50/50 to-white/80 p-1 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.85),0_6px_28px_-8px_rgba(79,70,229,0.12)] ring-1 ring-violet-200/45 backdrop-blur-md xl:inline-block xl:w-max xl:max-w-full";
 
 const trackInner =
-  "relative flex w-full min-w-0 flex-wrap content-start items-center justify-start gap-x-1 gap-y-1 xl:w-max xl:min-w-0";
+  "relative flex w-full min-w-0 flex-wrap content-start items-center gap-x-1 gap-y-1 xl:w-max xl:min-w-0";
 
 const segmentBase =
-  "relative z-10 inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded-xl border border-transparent px-2.5 py-1.5 text-sm font-medium motion-safe:transition-[color,transform] motion-safe:duration-200 motion-safe:ease-out focus-visible:outline focus-visible:ring-2 focus-visible:ring-teal-400/90 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-50/80 active:scale-[0.97]";
+  "relative z-10 inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded-xl border border-transparent px-2.5 py-1.5 text-sm font-medium motion-safe:transition-[color,transform] motion-safe:duration-200 motion-safe:ease-out focus-visible:outline focus-visible:ring-2 focus-visible:ring-violet-500/80 focus-visible:ring-offset-2 focus-visible:ring-offset-violet-50/90 active:scale-[0.97]";
 
 const segmentOn = "text-white";
 
 const segmentOff =
-  "text-slate-600 hover:-translate-y-px hover:text-slate-900 hover:shadow-sm hover:shadow-slate-200/40";
+  "text-slate-600 hover:-translate-y-px hover:text-slate-900 hover:shadow-sm hover:shadow-violet-200/35";
 
 const pill =
-  "pointer-events-none absolute left-0 top-0 z-0 rounded-xl bg-linear-to-br from-teal-500 via-teal-500 to-emerald-600 shadow-lg shadow-teal-500/30 ring-1 ring-white/35 motion-safe:transition-[transform,width,height,opacity] motion-safe:duration-300 motion-safe:ease-[cubic-bezier(0.4,0,0.2,1)] motion-reduce:transition-none will-change-[transform,width,height]";
+  "pointer-events-none absolute left-0 top-0 z-0 rounded-xl bg-linear-to-br from-indigo-500 via-violet-500 to-purple-600 shadow-md shadow-indigo-500/25 ring-1 ring-white/35 motion-safe:transition-[transform,width,height,opacity] motion-safe:duration-300 motion-safe:ease-[cubic-bezier(0.4,0,0.2,1)] motion-reduce:transition-none will-change-[transform,width,height]";
 
 const TOOLBAR: {
-  id: ChartFilter;
+  id: DashboardDisplayMode;
   label: string;
   icon: IconDefinition;
 }[] = [
-  { id: "all", label: "ทั้งหมด", icon: faTableCells },
-  { id: "pie", label: "Pie", icon: faChartPie },
-  { id: "bar", label: "Bar", icon: faChartBar },
-  { id: "line", label: "Line", icon: faChartLine },
-  { id: "column", label: "Column", icon: faChartColumn },
+  { id: "all", label: "ทั้งหมด", icon: faLayerGroup },
+  { id: "charts", label: "กราฟ", icon: faChartLine },
+  { id: "table", label: "ตาราง", icon: faTable },
 ];
 
 type Indicator = {
@@ -58,12 +53,12 @@ type Indicator = {
   ready: boolean;
 };
 
-type ToolbarProps = {
-  value: ChartFilter;
-  onChange: (v: ChartFilter) => void;
+type Props = {
+  value: DashboardDisplayMode;
+  onChange: (v: DashboardDisplayMode) => void;
 };
 
-export function ChartFilterToolbar({ value, onChange }: ToolbarProps) {
+export function DisplayModeToolbar({ value, onChange }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const buttonRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const [indicator, setIndicator] = useState<Indicator>({
@@ -110,7 +105,7 @@ export function ChartFilterToolbar({ value, onChange }: ToolbarProps) {
   return (
     <div
       role="toolbar"
-      aria-label="ฟิลเตอร์ประเภทกราฟ — ทั้งหมดหรือทีละประเภท"
+      aria-label="โหมดแสดงผล — ทั้งหมด กราฟ หรือตาราง"
       className={trackOuter}
     >
       <div ref={containerRef} className={trackInner}>

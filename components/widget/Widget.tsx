@@ -11,6 +11,8 @@ type WidgetProps = {
   children: ReactNode;
   /** แถบหัวรับ listeners จาก dnd-kit เมื่อต้องการลากสลับลำดับ */
   dragHandleProps?: HTMLAttributes<HTMLDivElement>;
+  /** แสดง placeholder แทน children (เช่น ตอนลาก — ไม่รัน Apex ใน DragOverlay) */
+  suspendContent?: boolean;
 };
 
 export function Widget({
@@ -18,6 +20,7 @@ export function Widget({
   subtitle,
   children,
   dragHandleProps,
+  suspendContent = false,
 }: WidgetProps) {
   const isDraggable = Boolean(dragHandleProps);
   const expand = useChartExpand();
@@ -78,7 +81,14 @@ export function Widget({
           <div
             className={`flex min-w-0 flex-col ${expand ? "" : "min-h-0 flex-1"}`}
           >
-            {children}
+            {suspendContent ? (
+              <div
+                className="min-h-[240px] w-full min-w-0 flex-1 rounded-lg bg-slate-100/50 ring-1 ring-slate-200/40"
+                aria-hidden
+              />
+            ) : (
+              children
+            )}
           </div>
         </div>
       </WidgetCardClearContext.Provider>
