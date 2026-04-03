@@ -17,7 +17,7 @@ type Handle =
 
 const MIN_W = 200;
 const MIN_H = 160;
-/** ระยะลากขั้นต่ำก่อนถือว่าเป็นการปรับขนาด (กันคลิกชน handle โดยไม่ตั้งใจ) */
+
 const DRAG_ACTIVATE_PX = 6;
 
 const handleCursor: Record<Handle, string> = {
@@ -75,7 +75,7 @@ function applyHandleDelta(
 
 const HANDLES: Handle[] = ["nw", "ne", "sw", "se", "n", "s", "e", "w"];
 
-/** ระยะจากขอบ/มุมกราฟ (px) — เมาส์เข้าใกล้แล้วแสดงจุด resize */
+
 const RESIZE_PROXIMITY_PX = 28;
 
 function computeNearbyHandles(
@@ -114,9 +114,7 @@ function computeNearbyHandles(
   return next;
 }
 
-/**
- * ปุ่มลาก h-7 w-7 — จุดจริงเป็นวงกลมเล็กตรงกลาง (span)
- */
+
 const handleLayout: Record<Handle, string> = {
   nw: "top-0 left-0 z-30 flex h-7 w-7 -translate-x-1/2 -translate-y-1/2 items-center justify-center",
   ne: "top-0 right-0 z-30 flex h-7 w-7 translate-x-1/2 -translate-y-1/2 items-center justify-center",

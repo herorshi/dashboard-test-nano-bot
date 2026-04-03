@@ -14,10 +14,10 @@ import {
   useState,
 } from "react";
 
-/** โหมดแสดงผลแดชบอร์ด — แยกจากฟิลเตอร์ประเภทกราฟ */
+
 export type DashboardDisplayMode = "all" | "charts" | "table";
 
-/** ต่ำกว่า xl เต็มความกว้าง; xl+ กว้างตามเนื้อหา (คู่กับแถบใน TradingDashboard) */
+
 const trackOuter =
   "block w-full max-w-full min-w-0 rounded-2xl border border-indigo-100/90 bg-linear-to-b from-indigo-50/90 via-violet-50/50 to-white/80 p-1 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.85),0_6px_28px_-8px_rgba(79,70,229,0.12)] ring-1 ring-violet-200/45 backdrop-blur-md xl:inline-block xl:w-max xl:max-w-full";
 

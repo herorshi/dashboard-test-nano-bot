@@ -48,7 +48,7 @@ import type { HTMLAttributes } from "react";
 import { useState } from "react";
 
 const DND_CONTEXT_ID = "dashboard-trading-dnd";
-/** แยก context เฉพาะกริดกราฟ — ไม่รวมกับ section (vertical) เพื่อลดการกระตุกตอนลากการ์ด */
+
 const CHART_GRID_DND_ID = "dashboard-chart-grid-dnd";
 
 const SECTION_IDS = ["charts", "table"] as const;
