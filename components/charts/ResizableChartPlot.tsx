@@ -1,6 +1,7 @@
 "use client";
 
 import { useChartExpand } from "@/contexts/ChartExpandContext";
+import { useRegisterWidgetCardLeaveClear } from "@/contexts/WidgetCardLeaveContext";
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -74,16 +75,57 @@ function applyHandleDelta(
 
 const HANDLES: Handle[] = ["nw", "ne", "sw", "se", "n", "s", "e", "w"];
 
-/** พื้นที่ลากโปร่งใส ไม่มีจุด — มุมใหญ่หน่อย ขอบกว้างยาวหน่อย */
+/** ระยะจากขอบ/มุมกราฟ (px) — เมาส์เข้าใกล้แล้วแสดงจุด resize */
+const RESIZE_PROXIMITY_PX = 28;
+
+function computeNearbyHandles(
+  clientX: number,
+  clientY: number,
+  rect: DOMRect,
+): Set<Handle> {
+  const w = rect.width;
+  const h = rect.height;
+  const x = clientX - rect.left;
+  const y = clientY - rect.top;
+  const P = RESIZE_PROXIMITY_PX;
+
+  if (x < -P || y < -P || x > w + P || y > h + P) {
+    return new Set();
+  }
+
+  const ix = Math.max(0, Math.min(w, x));
+  const iy = Math.max(0, Math.min(h, y));
+
+  const inLeft = ix < P;
+  const inRight = ix > w - P;
+  const inTop = iy < P;
+  const inBottom = iy > h - P;
+
+  const next = new Set<Handle>();
+  if (inTop && inLeft) next.add("nw");
+  else if (inTop && inRight) next.add("ne");
+  else if (inBottom && inLeft) next.add("sw");
+  else if (inBottom && inRight) next.add("se");
+  else if (inTop) next.add("n");
+  else if (inBottom) next.add("s");
+  else if (inLeft) next.add("w");
+  else if (inRight) next.add("e");
+
+  return next;
+}
+
+/**
+ * ปุ่มลาก h-7 w-7 — จุดจริงเป็นวงกลมเล็กตรงกลาง (span)
+ */
 const handleLayout: Record<Handle, string> = {
-  nw: "top-0 left-0 z-30 h-7 w-7 -translate-x-1/2 -translate-y-1/2",
-  ne: "top-0 right-0 z-30 h-7 w-7 translate-x-1/2 -translate-y-1/2",
-  sw: "bottom-0 left-0 z-30 h-7 w-7 -translate-x-1/2 translate-y-1/2",
-  se: "bottom-0 right-0 z-30 h-7 w-7 translate-x-1/2 translate-y-1/2",
-  n: "top-0 left-1/2 z-20 h-4 w-[4.5rem] -translate-x-1/2 -translate-y-1/2",
-  s: "bottom-0 left-1/2 z-20 h-4 w-[4.5rem] -translate-x-1/2 translate-y-1/2",
-  e: "top-1/2 right-0 z-20 h-[4.5rem] w-4 -translate-y-1/2 translate-x-1/2",
-  w: "top-1/2 left-0 z-20 h-[4.5rem] w-4 -translate-y-1/2 -translate-x-1/2",
+  nw: "top-0 left-0 z-30 flex h-7 w-7 -translate-x-1/2 -translate-y-1/2 items-center justify-center",
+  ne: "top-0 right-0 z-30 flex h-7 w-7 translate-x-1/2 -translate-y-1/2 items-center justify-center",
+  sw: "bottom-0 left-0 z-30 flex h-7 w-7 -translate-x-1/2 translate-y-1/2 items-center justify-center",
+  se: "bottom-0 right-0 z-30 flex h-7 w-7 translate-x-1/2 translate-y-1/2 items-center justify-center",
+  n: "top-0 left-1/2 z-30 flex h-7 w-7 -translate-x-1/2 -translate-y-1/2 items-center justify-center",
+  s: "bottom-0 left-1/2 z-30 flex h-7 w-7 -translate-x-1/2 translate-y-1/2 items-center justify-center",
+  e: "top-1/2 right-0 z-30 flex h-7 w-7 -translate-y-1/2 translate-x-1/2 items-center justify-center",
+  w: "top-1/2 left-0 z-30 flex h-7 w-7 -translate-y-1/2 -translate-x-1/2 items-center justify-center",
 };
 
 export type ResizableChartPlotProps = {
@@ -97,6 +139,11 @@ export function ResizableChartPlot({
 }: ResizableChartPlotProps) {
   const fillRegion = useChartExpand();
   const shellRef = useRef<HTMLDivElement>(null);
+  const innerRef = useRef<HTMLDivElement>(null);
+  const [nearbyHandles, setNearbyHandles] = useState<Set<Handle>>(() => new Set());
+  const [resizing, setResizing] = useState(false);
+  const rafHoverRef = useRef<number | null>(null);
+  const lastPointerRef = useRef({ x: 0, y: 0 });
 
   const dragRef = useRef<{
     handle: Handle;
@@ -175,6 +222,7 @@ export function ResizableChartPlot({
     (handle: Handle) => (e: React.PointerEvent) => {
       e.preventDefault();
       e.stopPropagation();
+      setResizing(true);
       const b = readBounds();
       const { w, h } = sizeRef.current;
       dragRef.current = {
@@ -188,6 +236,41 @@ export function ResizableChartPlot({
     },
     [readBounds],
   );
+
+  const updateNearbyHandles = useCallback((clientX: number, clientY: number) => {
+    const inner = innerRef.current;
+    if (!inner) return;
+    setNearbyHandles(computeNearbyHandles(clientX, clientY, inner.getBoundingClientRect()));
+  }, []);
+
+  const onShellPointerMove = useCallback(
+    (e: React.PointerEvent<HTMLDivElement>) => {
+      lastPointerRef.current = { x: e.clientX, y: e.clientY };
+      if (resizing) return;
+      if (rafHoverRef.current != null) return;
+      rafHoverRef.current = requestAnimationFrame(() => {
+        rafHoverRef.current = null;
+        const { x, y } = lastPointerRef.current;
+        updateNearbyHandles(x, y);
+      });
+    },
+    [resizing, updateNearbyHandles],
+  );
+
+  const clearNearbyHandles = useCallback(() => {
+    setNearbyHandles(new Set());
+  }, []);
+
+  useRegisterWidgetCardLeaveClear(clearNearbyHandles);
+
+  useEffect(() => {
+    return () => {
+      if (rafHoverRef.current != null) {
+        cancelAnimationFrame(rafHoverRef.current);
+        rafHoverRef.current = null;
+      }
+    };
+  }, []);
 
   useEffect(() => {
     const onMove = (e: PointerEvent) => {
@@ -215,6 +298,7 @@ export function ResizableChartPlot({
     };
     const endDrag = () => {
       dragRef.current = null;
+      setResizing(false);
     };
     window.addEventListener("pointermove", onMove);
     window.addEventListener("pointerup", endDrag);
@@ -229,6 +313,8 @@ export function ResizableChartPlot({
   return (
     <div
       ref={shellRef}
+      onPointerMove={onShellPointerMove}
+      onPointerLeave={clearNearbyHandles}
       className={
         fillRegion
           ? "relative w-full min-w-0 min-h-[min(18rem,38svh)] sm:min-h-[min(22rem,42svh)] overflow-visible"
@@ -236,6 +322,7 @@ export function ResizableChartPlot({
       }
     >
       <div
+        ref={innerRef}
         className={`relative min-h-0 rounded-xl ${
           fillRegion ? "w-full overflow-visible" : "overflow-hidden"
         } ${userSized ? "mx-auto max-w-full shrink-0" : "w-full min-w-0"}`}
@@ -246,17 +333,31 @@ export function ResizableChartPlot({
         }
       >
         {children({ width: size.w, height: size.h })}
-        {HANDLES.map((h) => (
-          <button
-            key={h}
-            type="button"
-            aria-label="ปรับขนาดกราฟ"
-            title="ลากเพื่อปรับขนาด"
-            tabIndex={-1}
-            className={`absolute touch-none border-0 bg-transparent p-0 shadow-none outline-none ring-0 focus-visible:ring-2 focus-visible:ring-teal-400/35 ${handleLayout[h]} ${handleCursor[h]}`}
-            onPointerDown={onHandleDown(h)}
-          />
-        ))}
+        {HANDLES.map((h) => {
+          const showGrip = resizing || nearbyHandles.has(h);
+          return (
+            <button
+              key={h}
+              type="button"
+              aria-label="ปรับขนาดกราฟ"
+              title="ลากเพื่อปรับขนาด"
+              tabIndex={-1}
+              className={`absolute touch-none border-0 bg-transparent p-0 shadow-none outline-none transition-opacity duration-150 ease-out focus-visible:ring-2 focus-visible:ring-teal-400/35 ${handleLayout[h]} ${handleCursor[h]} ${
+                showGrip ? "z-40" : "z-30"
+              }`}
+              onPointerDown={onHandleDown(h)}
+            >
+              <span
+                aria-hidden
+                className={`pointer-events-none h-3 w-3 shrink-0 rounded-full border-2 border-white shadow-sm transition-opacity duration-150 ${
+                  showGrip
+                    ? "bg-teal-500 opacity-100 ring-1 ring-teal-600/30"
+                    : "opacity-0"
+                }`}
+              />
+            </button>
+          );
+        })}
       </div>
     </div>
   );
