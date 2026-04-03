@@ -11,6 +11,7 @@ import {
 } from "@/components/charts/DashboardCharts";
 import {
   ChartFilterToolbar,
+  CHART_WIDGET_TITLES,
   type ChartFilter,
   type ChartId,
   CHART_IDS,
@@ -69,7 +70,7 @@ function ChartWidget({
     case "pie":
       return (
         <Widget
-          title="พอร์ตตามหลักทรัพย์"
+          title={CHART_WIDGET_TITLES.pie}
           dragHandleProps={dragHandleProps}
         >
           <PiePortfolioChart />
@@ -78,7 +79,7 @@ function ChartWidget({
     case "bar":
       return (
         <Widget
-          title="ปริมาณซื้อขายตามหลักทรัพย์"
+          title={CHART_WIDGET_TITLES.bar}
           dragHandleProps={dragHandleProps}
         >
           <BarVolumeCompareChart />
@@ -87,7 +88,7 @@ function ChartWidget({
     case "line":
       return (
         <Widget
-          title="ดัชนีตามเวลา"
+          title={CHART_WIDGET_TITLES.line}
           dragHandleProps={dragHandleProps}
         >
           <LinePriceChart />
@@ -96,7 +97,7 @@ function ChartWidget({
     case "column":
       return (
         <Widget
-          title="คำสั่งซื้อ/ขายต่อช่วง"
+          title={CHART_WIDGET_TITLES.column}
           dragHandleProps={dragHandleProps}
         >
           <ColumnOrdersChart />

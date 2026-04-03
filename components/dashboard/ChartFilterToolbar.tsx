@@ -20,6 +20,14 @@ export const CHART_IDS = ["pie", "bar", "line", "column"] as const;
 export type ChartId = (typeof CHART_IDS)[number];
 export type ChartFilter = "all" | ChartId;
 
+/** หัวข้อการ์ด — ใช้ซ้ำกับฟิลเตอร์ให้ชื่อตรงกัน */
+export const CHART_WIDGET_TITLES: Record<ChartId, string> = {
+  pie: "พอร์ตตามหลักทรัพย์",
+  bar: "ปริมาณซื้อขายตามหลักทรัพย์",
+  line: "ดัชนีตามเวลา",
+  column: "คำสั่งซื้อ/ขายต่อช่วง",
+};
+
 
 const trackOuter =
   "block w-full max-w-full min-w-0 text-left rounded-2xl border border-white/70 bg-linear-to-b from-slate-50/95 via-white/60 to-slate-100/70 p-1 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.85),0_8px_32px_-8px_rgba(15,23,42,0.12)] ring-1 ring-slate-200/50 backdrop-blur-md xl:inline-block xl:w-max xl:max-w-full";
@@ -44,10 +52,10 @@ const TOOLBAR: {
   icon: IconDefinition;
 }[] = [
   { id: "all", label: "ทั้งหมด", icon: faTableCells },
-  { id: "pie", label: "แผนภูมิวงกลม", icon: faChartPie },
-  { id: "bar", label: "แผนภูมิแท่งแนวนอน", icon: faChartBar },
-  { id: "line", label: "แผนภูมิเส้น", icon: faChartLine },
-  { id: "column", label: "แผนภูมิแท่งแนวตั้ง", icon: faChartColumn },
+  { id: "pie", label: CHART_WIDGET_TITLES.pie, icon: faChartPie },
+  { id: "bar", label: CHART_WIDGET_TITLES.bar, icon: faChartBar },
+  { id: "line", label: CHART_WIDGET_TITLES.line, icon: faChartLine },
+  { id: "column", label: CHART_WIDGET_TITLES.column, icon: faChartColumn },
 ];
 
 type Indicator = {
