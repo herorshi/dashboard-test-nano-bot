@@ -1,6 +1,5 @@
 "use client";
 
-import { format } from "date-fns";
 import { th } from "date-fns/locale";
 import DatePicker, { registerLocale } from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
@@ -17,9 +16,13 @@ export type ChartDateRangePickerProps = {
   variant?: "card" | "inline";
 };
 
-/** ต่ำกว่า xl: ช่องวันที่เต็มแถว (มือถือ + iPad); xl+: กว้างตามเนื้อหา */
+
 const mobileFullWidthDateRoot =
-  "[&_.react-datepicker-wrapper]:block [&_.react-datepicker-wrapper]:w-full [&_.react-datepicker-wrapper]:min-w-0 [&_.react-datepicker__input-container]:flex [&_.react-datepicker__input-container]:w-full [&_.react-datepicker__input-container]:min-w-0 [&_.react-datepicker__input-container]:max-w-full [&_.react-datepicker__input-container]:items-center [&_input]:box-border [&_input]:min-w-0 [&_input]:w-full [&_input]:flex-1 xl:[&_.react-datepicker-wrapper]:w-auto xl:[&_.react-datepicker__input-container]:w-auto xl:[&_input]:w-auto xl:[&_input]:max-w-none xl:[&_input]:flex-none";
+  "[&_.react-datepicker-wrapper]:block [&_.react-datepicker-wrapper]:w-full [&_.react-datepicker-wrapper]:min-w-0 [&_.react-datepicker__input-container]:flex [&_.react-datepicker__input-container]:w-full [&_.react-datepicker__input-container]:min-w-0 [&_.react-datepicker__input-container]:max-w-full [&_.react-datepicker__input-container]:items-center [&_input]:box-border [&_input]:w-full";
+
+
+const inputWidthShared =
+  "w-full min-w-0 max-w-full xl:min-w-[12rem] xl:max-w-[12rem]";
 
 export function ChartDateRangePicker({
   startDate,
@@ -48,7 +51,7 @@ export function ChartDateRangePicker({
         locale="th"
         placeholderText="เลือกช่วง"
         isClearable
-        className="min-w-0 w-full max-w-full rounded-lg border border-sky-200 bg-white px-2.5 py-1.5 text-xs text-slate-800 shadow-sm outline-none focus:border-teal-400 focus:ring-1 focus:ring-teal-300 xl:w-auto xl:max-w-none"
+        className={`box-border rounded-lg border border-sky-200 bg-white px-2 py-1.5 pr-9 text-xs tabular-nums text-slate-800 shadow-sm outline-none focus:border-teal-400 focus:ring-1 focus:ring-teal-300 ${inputWidthShared}`}
         calendarClassName="!font-sans"
       />
     </div>

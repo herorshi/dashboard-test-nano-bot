@@ -45,6 +45,9 @@ const CHART_DND_SENSORS = [
   },
 ];
 
+
+const DND_CONTEXT_ID = "dashboard-trading-dnd";
+
 const SECTION_IDS = ["charts", "table"] as const;
 type SectionId = (typeof SECTION_IDS)[number];
 
@@ -370,6 +373,7 @@ export function TradingDashboard() {
         <div className="flex min-h-0 flex-1 flex-col">
         <DashboardDndLayoutTickContext.Provider value={dndLayoutTick}>
           <DndContext
+            id={DND_CONTEXT_ID}
             sensors={CHART_DND_SENSORS}
             collisionDetection={closestCenter}
             onDragEnd={handleDragEnd}
