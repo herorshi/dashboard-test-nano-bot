@@ -20,8 +20,8 @@ export type ChartDateRangePickerProps = {
 const mobileFullWidthDateRoot =
   "[&_.react-datepicker-wrapper]:block [&_.react-datepicker-wrapper]:w-full [&_.react-datepicker-wrapper]:min-w-0 [&_.react-datepicker__input-container]:relative [&_.react-datepicker__input-container]:w-full [&_.react-datepicker__input-container]:min-w-0 [&_.react-datepicker__input-container]:max-w-full [&_.react-datepicker__close-icon]:z-10 [&_input]:box-border [&_input]:w-full";
 
-
-const inputWidthShared =
+/** จำกัดความกว้างที่ wrapper — ไม่ใช่แค่ input — เพื่อให้ปุ่ม clear (absolute) ชิดขวาของช่องจริง ไม่ล้นไปขอบการ์ด */
+const pickerFieldWrapClass =
   "w-full min-w-0 max-w-full xl:min-w-[12rem] xl:max-w-[12rem]";
 
 export function ChartDateRangePicker({
@@ -38,22 +38,24 @@ export function ChartDateRangePicker({
 
   return (
     <div className={rowClass}>
-      <DatePicker
-        selectsRange
-        startDate={startDate ?? undefined}
-        endDate={endDate ?? undefined}
-        maxDate={new Date()}
-        onChange={(dates) => {
-          const [s, e] = dates;
-          onDatesChange(s ?? null, e ?? null);
-        }}
-        dateFormat="dd/MM/yyyy"
-        locale="th"
-        placeholderText="เลือกช่วง"
-        isClearable
-        className={`box-border rounded-lg border border-sky-200 bg-white px-2 py-1.5 pr-9 text-xs tabular-nums text-slate-800 shadow-sm outline-none focus:border-teal-400 focus:ring-1 focus:ring-teal-300 ${inputWidthShared}`}
-        calendarClassName="!font-sans"
-      />
+      <div className={pickerFieldWrapClass}>
+        <DatePicker
+          selectsRange
+          startDate={startDate ?? undefined}
+          endDate={endDate ?? undefined}
+          maxDate={new Date()}
+          onChange={(dates) => {
+            const [s, e] = dates;
+            onDatesChange(s ?? null, e ?? null);
+          }}
+          dateFormat="dd/MM/yyyy"
+          locale="th"
+          placeholderText="เลือกช่วง"
+          isClearable
+          className="box-border w-full rounded-lg border border-sky-200 bg-white px-2 py-1.5 pr-9 text-xs tabular-nums text-slate-800 shadow-sm outline-none focus:border-teal-400 focus:ring-1 focus:ring-teal-300"
+          calendarClassName="!font-sans"
+        />
+      </div>
     </div>
   );
 }
