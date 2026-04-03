@@ -1,5 +1,6 @@
 "use client";
 
+import { endOfDay, startOfDay, subDays } from "date-fns";
 import {
   createContext,
   useCallback,
@@ -9,6 +10,12 @@ import {
   useState,
   type ReactNode,
 } from "react";
+
+function createDefaultGlobalRange(): { start: Date; end: Date } {
+  const end = endOfDay(new Date());
+  const start = startOfDay(subDays(end, 6));
+  return { start, end };
+}
 
 type GlobalClearPayload = { start: Date; end: Date };
 
@@ -27,8 +34,9 @@ const GlobalChartDateRangeContext =
   createContext<GlobalChartDateRangeContextValue | null>(null);
 
 export function GlobalChartDateRangeProvider({ children }: { children: ReactNode }) {
-  const [globalStart, setGlobalStart] = useState<Date | null>(null);
-  const [globalEnd, setGlobalEnd] = useState<Date | null>(null);
+  const initRange = useMemo(() => createDefaultGlobalRange(), []);
+  const [globalStart, setGlobalStart] = useState<Date | null>(initRange.start);
+  const [globalEnd, setGlobalEnd] = useState<Date | null>(initRange.end);
   const listenersRef = useRef<Set<Listener>>(new Set());
 
   const subscribeGlobalClear = useCallback((fn: Listener) => {
@@ -53,8 +61,8 @@ export function GlobalChartDateRangeProvider({ children }: { children: ReactNode
   }, [globalStart, globalEnd]);
 
   const setGlobalRange = useCallback((start: Date | null, end: Date | null) => {
-    setGlobalStart(start);
-    setGlobalEnd(end);
+    setGlobalStart(start ? startOfDay(start) : null);
+    setGlobalEnd(end ? endOfDay(end) : null);
   }, []);
 
   const value = useMemo(

@@ -1,6 +1,8 @@
 "use client";
 
+import { useGlobalChartDateRangeOptional } from "@/contexts/GlobalChartDateRangeContext";
 import { getDateRange } from "@/lib/getDateRange";
+import { endOfDay, isWithinInterval, startOfDay } from "date-fns";
 import {
   useCallback,
   useEffect,
@@ -172,6 +174,16 @@ function cellValue(row: OrderRow, key: keyof OrderRow): ReactNode {
 }
 
 export function OrdersDataTable({ rows = MOCK_ORDERS }: { rows?: OrderRow[] }) {
+  const globalDate = useGlobalChartDateRangeOptional();
+  const visibleRows = useMemo(() => {
+    if (!globalDate?.globalStart || !globalDate?.globalEnd) return rows;
+    const start = startOfDay(globalDate.globalStart);
+    const end = endOfDay(globalDate.globalEnd);
+    return rows.filter((row) =>
+      isWithinInterval(new Date(row.updatedAt), { start, end }),
+    );
+  }, [rows, globalDate?.globalStart, globalDate?.globalEnd]);
+
   const [widths, setWidths] = useState(() =>
     COLUMNS.map((c) => c.defaultWidth),
   );
@@ -268,7 +280,7 @@ export function OrdersDataTable({ rows = MOCK_ORDERS }: { rows?: OrderRow[] }) {
         ))}
       </div>
       <div role="table" className="min-w-max bg-white">
-        {rows.map((row) => {
+        {visibleRows.map((row) => {
           const open = expandedId === row.id;
           return (
             <div key={row.id} className="border-b border-sky-100 bg-white last:border-0">

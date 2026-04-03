@@ -7,7 +7,7 @@ import { ChartDateRangePicker } from "@/components/charts/ChartDateRangePicker";
 import { useDashboardDndLayoutTick } from "@/contexts/DashboardDndLayoutContext";
 import { useChartExpand } from "@/contexts/ChartExpandContext";
 import { useGlobalChartDateRangeOptional } from "@/contexts/GlobalChartDateRangeContext";
-import { labelsForChartRange } from "@/lib/chartRangeLabels";
+import { labelsForEachCalendarDay } from "@/lib/chartRangeLabels";
 import {
   MOCK_BAR_STOCK_LABELS,
   MOCK_BAR_VOLUMES,
@@ -16,7 +16,7 @@ import {
   mockHourlyBuySell,
   mockStockIndexSeries,
 } from "@/lib/mockDashboardData";
-import { subDays } from "date-fns";
+import { endOfDay, startOfDay, subDays } from "date-fns";
 import type { ReactNode } from "react";
 import { useEffect, useMemo, useState } from "react";
 
@@ -60,12 +60,14 @@ function FreshChartSurface({ children }: { children: ReactNode }) {
     </div>
   );
 }
-function useChartDateRange() { // fucntion get date range
+function useChartDateRange() {
   const globalCtx = useGlobalChartDateRangeOptional();
   const [localStart, setLocalStart] = useState<Date | null>(() =>
-    subDays(new Date(), 6),
+    startOfDay(subDays(new Date(), 6)),
   );
-  const [localEnd, setLocalEnd] = useState<Date | null>(() => new Date());
+  const [localEnd, setLocalEnd] = useState<Date | null>(() =>
+    endOfDay(new Date()),
+  );
 
   useEffect(() => {
     if (!globalCtx) return;
@@ -90,8 +92,8 @@ function useChartDateRange() { // fucntion get date range
     ) {
       globalCtx.exitGlobalSyncMode();
     }
-    setLocalStart(s);
-    setLocalEnd(e);
+    setLocalStart(s ? startOfDay(s) : null);
+    setLocalEnd(e ? endOfDay(e) : null);
   };
 
   const rangeComplete = Boolean(startDate && endDate);
@@ -248,15 +250,15 @@ export function LinePriceChart() {
   const { startDate, endDate, onDatesChange, rangeComplete } = useChartDateRange();
   const categories = useMemo(() => {
     if (!startDate || !endDate) return [];
-    return labelsForChartRange(startDate, endDate, 7);
+    return labelsForEachCalendarDay(startDate, endDate);
   }, [startDate, endDate]);
   const lineSeriesData = useMemo(() => {
     if (!startDate || !endDate) return [];
-    const pts = labelsForChartRange(startDate, endDate, 7);
+    const dayLabels = labelsForEachCalendarDay(startDate, endDate);
     const seed =
       Math.floor(startDate.getTime() / 86_400_000) +
       Math.floor(endDate.getTime() / 86_400_000);
-    return mockStockIndexSeries(pts.length, seed);
+    return mockStockIndexSeries(dayLabels.length, seed);
   }, [startDate, endDate]);
   const options: ApexOptions = {
     ...freshBase(),
@@ -324,15 +326,15 @@ export function ColumnOrdersChart() {
   const { startDate, endDate, onDatesChange, rangeComplete } = useChartDateRange();
   const categories = useMemo(() => {
     if (!startDate || !endDate) return [];
-    return labelsForChartRange(startDate, endDate, 6);
+    return labelsForEachCalendarDay(startDate, endDate);
   }, [startDate, endDate]);
   const buySell = useMemo(() => {
     if (!startDate || !endDate) {
       return { buy: [] as number[], sell: [] as number[] };
     }
-    const pts = labelsForChartRange(startDate, endDate, 6);
+    const dayLabels = labelsForEachCalendarDay(startDate, endDate);
     const seed = startDate.getTime() ^ endDate.getTime();
-    return mockHourlyBuySell(pts.length, seed);
+    return mockHourlyBuySell(dayLabels.length, seed);
   }, [startDate, endDate]);
   const options: ApexOptions = {
     ...freshBase(),
