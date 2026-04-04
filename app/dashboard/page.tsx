@@ -13,7 +13,7 @@ export default function DashboardPage() {
         </div>
       </header>
 
-      <main className="mx-auto flex min-h-0 w-full max-w-[1400px] flex-1 flex-col px-4 py-6 sm:px-6">
+      <main className="flex min-h-0 w-full max-w-[1400px] flex-1 flex-col px-4 py-6 sm:px-6">
         <TradingDashboard />
       </main>
     </>

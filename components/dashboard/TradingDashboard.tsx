@@ -46,7 +46,8 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import type { HTMLAttributes } from "react";
-import { useState } from "react";
+import { useCallback, useLayoutEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 const DND_CONTEXT_ID = "dashboard-trading-dnd";
 
@@ -153,30 +154,104 @@ function SectionDragWithTooltip({
   tooltipText: string;
   dragProps: HTMLAttributes<HTMLDivElement>;
 }) {
+  const triggerRef = useRef<HTMLDivElement>(null);
+  const [open, setOpen] = useState(false);
+  const [coords, setCoords] = useState({ top: 0, left: 0 });
+
+  const updateCoords = useCallback(() => {
+    const el = triggerRef.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    setCoords({
+      top: r.top,
+      left: r.left + r.width / 2,
+    });
+  }, []);
+
+  useLayoutEffect(() => {
+    if (!open) return;
+    updateCoords();
+    const ro = () => updateCoords();
+    window.addEventListener("scroll", ro, true);
+    window.addEventListener("resize", ro);
+    return () => {
+      window.removeEventListener("scroll", ro, true);
+      window.removeEventListener("resize", ro);
+    };
+  }, [open, updateCoords]);
+
+  const show = () => {
+    const el = triggerRef.current;
+    if (el) {
+      const r = el.getBoundingClientRect();
+      setCoords({
+        top: r.top,
+        left: r.left + r.width / 2,
+      });
+    }
+    setOpen(true);
+  };
+
+  const hide = () => setOpen(false);
+
+  const mergedDragProps: HTMLAttributes<HTMLDivElement> = {
+    ...dragProps,
+    onPointerEnter: (e) => {
+      dragProps.onPointerEnter?.(e);
+      show();
+    },
+    onPointerLeave: (e) => {
+      dragProps.onPointerLeave?.(e);
+      hide();
+    },
+    onFocus: (e) => {
+      dragProps.onFocus?.(e);
+      show();
+    },
+    onBlur: (e) => {
+      dragProps.onBlur?.(e);
+      hide();
+    },
+  };
+
+  const tooltipPortal =
+    typeof document !== "undefined" && open
+      ? createPortal(
+          <div
+            role="tooltip"
+            aria-hidden="true"
+            className="pointer-events-none fixed z-[99999] flex w-max max-w-[min(100vw-2rem,22rem)] flex-col items-center transition-[opacity,transform] duration-200 ease-out will-change-[opacity,transform] motion-reduce:transition-none"
+            style={{
+              left: coords.left,
+              top: coords.top,
+              transform: "translate(-50%, calc(-100% - 0.5rem))",
+            }}
+          >
+            <div className="rounded-lg bg-neutral-950 px-3 py-2.5 text-left text-xs font-medium leading-relaxed text-white shadow-xl ring-1 ring-white/15">
+              {tooltipText}
+            </div>
+            <div
+              className="-mt-px h-0 w-0 shrink-0 border-l-[7px] border-r-[7px] border-t-[8px] border-l-transparent border-r-transparent border-t-neutral-950"
+              aria-hidden
+            />
+          </div>,
+          document.body,
+        )
+      : null;
+
   return (
-    <div className="group relative shrink-0">
+    <div className="relative shrink-0">
       <div
+        ref={triggerRef}
         role="button"
         tabIndex={0}
-        {...dragProps}
+        {...mergedDragProps}
         aria-label={tooltipText}
         className={sectionDragIconButtonClass}
       >
         <FontAwesomeIcon icon={faGripVertical} className="h-5 w-5" aria-hidden />
       </div>
-      <div
-        role="tooltip"
-        aria-hidden="true"
-        className="pointer-events-none absolute bottom-full left-1/2 z-[60] mb-2 flex w-max max-w-[min(100vw-2rem,22rem)] -translate-x-1/2 flex-col items-center opacity-0 translate-y-2 scale-[0.98] transition-[opacity,transform] duration-200 ease-out will-change-[opacity,transform] group-hover:opacity-100 group-hover:translate-y-0 group-hover:scale-100 motion-reduce:transition-none motion-reduce:duration-0 motion-reduce:group-hover:translate-y-0"
-      >
-        <div className="rounded-lg bg-neutral-950 px-3 py-2.5 text-left text-xs font-medium leading-relaxed text-white shadow-xl ring-1 ring-white/15">
-          {tooltipText}
-        </div>
-        <div
-          className="-mt-px h-0 w-0 shrink-0 border-l-[7px] border-r-[7px] border-t-[8px] border-l-transparent border-r-transparent border-t-neutral-950"
-          aria-hidden
-        />
-      </div>
+      {tooltipPortal}
     </div>
   );
 }
@@ -222,34 +297,32 @@ function SortableChartsBlock({
       ref={setNodeRef}
       style={style}
       aria-labelledby="dashboard-charts-heading"
-      className={
-        filter === "all"
-          ? "min-w-0 space-y-4"
-          : "w-full min-w-0 space-y-4"
-      }
+      className="w-full min-w-0 space-y-4 max-lg:overflow-x-hidden"
     >
-      <div className="flex min-w-0 items-start gap-3">
-        <SectionDragWithTooltip
-          tooltipText={SECTION_DRAG_TOOLTIP_CHARTS}
-          dragProps={sectionDragProps}
-        />
-        <div className="min-w-0 flex-1">
-          <div className="flex min-w-0 flex-nowrap items-center gap-x-3 overflow-x-auto pb-0.5 [scrollbar-width:thin]">
-            <h2
-              id="dashboard-charts-heading"
-              className="shrink-0 pt-0.5 text-lg font-semibold tracking-tight text-slate-800"
-            >
-              กราฟภาพรวม
-            </h2>
-            <div className="min-w-0 shrink [&_[role=toolbar]]:!inline-block [&_[role=toolbar]]:!w-max [&_[role=toolbar]]:max-w-none">
-              <ChartFilterToolbar
-                value={filter}
-                onChange={onChartFilterChange}
-              />
-            </div>
-            <div className="ml-auto min-w-0 shrink-0 sm:max-w-[min(100%,28rem)]">
-              <GlobalChartDateRangeBar />
-            </div>
+      <div className="space-y-3 max-lg:overflow-x-hidden">
+        <div className="flex min-w-0 max-w-full items-center gap-2">
+          <SectionDragWithTooltip
+            tooltipText={SECTION_DRAG_TOOLTIP_CHARTS}
+            dragProps={sectionDragProps}
+          />
+          <h2
+            id="dashboard-charts-heading"
+            className="min-w-0 text-lg font-semibold leading-snug tracking-tight text-slate-800"
+          >
+            กราฟภาพรวม
+          </h2>
+        </div>
+        {/* มือถือ: คอลัมน์ แยกบรรทัด ชิดซ้าย ไม่เลื่อนแนวนอน lg+: แถวเดียว + scroll เมื่อแคบ */}
+        <div className="flex w-full min-w-0 max-w-full flex-col items-start gap-3 overflow-x-visible text-left max-lg:items-stretch max-lg:overflow-x-hidden lg:flex-row 
+        lg:flex-nowrap lg:items-center lg:gap-x-3  lg:pb-0.5 lg:[scrollbar-width:thin]">
+          <div className="w-full min-w-0 max-w-full lg:min-w-0 lg:shrink lg:[&_[role=toolbar]]:!inline-block lg:[&_[role=toolbar]]:!w-max [&_[role=toolbar]]:max-w-none">
+            <ChartFilterToolbar
+              value={filter}
+              onChange={onChartFilterChange}
+            />
+          </div>
+          <div className="w-full min-w-0 max-w-full lg:ml-auto lg:w-auto lg:shrink-0 lg:max-w-[min(100%,28rem)]">
+            <GlobalChartDateRangeBar />
           </div>
         </div>
       </div>
@@ -307,19 +380,17 @@ function SortableTableBlock() {
       aria-labelledby="dashboard-orders-heading"
       className="min-w-0 shrink-0 pb-4"
     >
-      <div className="mb-4 flex min-w-0 items-start gap-3">
+      <div className="mb-4 flex min-w-0 items-center gap-2">
         <SectionDragWithTooltip
           tooltipText={SECTION_DRAG_TOOLTIP_TABLE}
           dragProps={sectionDragProps}
         />
-        <div className="min-w-0 flex-1 pt-0.5">
-          <h2
-            id="dashboard-orders-heading"
-            className="text-lg font-semibold tracking-tight text-slate-800"
-          >
-            ตารางคำสั่งซื้อขาย
-          </h2>
-        </div>
+        <h2
+          id="dashboard-orders-heading"
+          className="min-w-0 text-lg font-semibold leading-snug tracking-tight text-slate-800"
+        >
+          ตารางคำสั่งซื้อขาย
+        </h2>
       </div>
       <OrdersDataTable />
     </section>
@@ -406,9 +477,7 @@ export function TradingDashboard() {
     <GlobalChartDateRangeProvider>
       <ChartExpandProvider value={chartFilter !== "all"}>
         <div className="flex min-h-0 flex-1 flex-col">
-          {/*
-            แถบฟิลเตอร์อยู่นอก DnD — ไม่เลื่อนตามการสลับตำแหน่งกราฟ/ตาราง
-          */}
+          {/* แถบฟิลเตอร์อยู่นอก DnD — ไม่เลื่อนตามการสลับตำแหน่งกราฟ/ตาราง */}
           <div className="sticky top-0 z-20 -mx-4 shrink-0 bg-linear-to-b px-4 py-4 shadow-sm shadow-sky-100/40 backdrop-blur-md sm:-mx-6 sm:px-6">
             <div className="flex w-full min-w-0 flex-col items-start">
               <div className="min-w-0 w-full max-w-full">
@@ -430,7 +499,7 @@ export function TradingDashboard() {
                 items={sortableSectionItems}
                 strategy={verticalListSortingStrategy}
               >
-                <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-10">
+                <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-5">
                   {displayMode === "table" ? (
                     <SortableTableBlock key="table" />
                   ) : displayMode === "charts" ? (

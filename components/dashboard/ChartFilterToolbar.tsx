@@ -30,10 +30,10 @@ export const CHART_WIDGET_TITLES: Record<ChartId, string> = {
 
 
 const trackOuter =
-  "block w-full max-w-full min-w-0 text-left rounded-2xl border border-white/70 bg-linear-to-b from-slate-50/95 via-white/60 to-slate-100/70 p-1 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.85),0_8px_32px_-8px_rgba(15,23,42,0.12)] ring-1 ring-slate-200/50 backdrop-blur-md xl:inline-block xl:w-max xl:max-w-full";
+  "mx-0 block w-full max-w-full min-w-0 self-start text-left rounded-2xl border border-white/70 bg-linear-to-b from-slate-50/95 via-white/60 to-slate-100/70 p-1 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.85),0_8px_32px_-8px_rgba(15,23,42,0.12)] ring-1 ring-slate-200/50 backdrop-blur-md xl:inline-block xl:w-max xl:max-w-full";
 
 const trackInner =
-  "relative flex w-full min-w-0 flex-wrap content-start items-center justify-start gap-x-1 gap-y-1 xl:w-max xl:min-w-0";
+  "relative flex w-full min-w-0 flex-wrap content-start items-start justify-start gap-x-1 gap-y-1 xl:w-max xl:min-w-0";
 
 const segmentBase =
   "relative z-10 inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded-xl border border-transparent px-2.5 py-1.5 text-sm font-medium motion-safe:transition-[color,transform] motion-safe:duration-200 motion-safe:ease-out focus-visible:outline focus-visible:ring-2 focus-visible:ring-teal-400/90 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-50/80 active:scale-[0.97]";
@@ -44,7 +44,7 @@ const segmentOff =
   "text-slate-600 hover:-translate-y-px hover:text-slate-900 hover:shadow-sm hover:shadow-slate-200/40";
 
 const pill =
-  "pointer-events-none absolute left-0 top-0 z-0 rounded-xl bg-linear-to-br from-teal-500 via-teal-500 to-emerald-600 shadow-lg shadow-teal-500/30 ring-1 ring-white/35 motion-safe:transition-[transform,width,height,opacity] motion-safe:duration-300 motion-safe:ease-[cubic-bezier(0.4,0,0.2,1)] motion-reduce:transition-none will-change-[transform,width,height]";
+  "pointer-events-none absolute left-0 top-0 z-0 rounded-xl border border-white/30 bg-linear-to-br from-teal-500 via-teal-500 to-emerald-600 motion-safe:transition-[transform,width,height,opacity] motion-safe:duration-300 motion-safe:ease-[cubic-bezier(0.4,0,0.2,1)] motion-reduce:transition-none will-change-[transform,width,height]";
 
 const TOOLBAR: {
   id: ChartFilter;

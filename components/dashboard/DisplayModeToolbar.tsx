@@ -33,7 +33,7 @@ const segmentOff =
   "text-slate-600 hover:-translate-y-px hover:text-slate-900 hover:shadow-sm hover:shadow-violet-200/35";
 
 const pill =
-  "pointer-events-none absolute left-0 top-0 z-0 rounded-xl bg-linear-to-br from-indigo-500 via-violet-500 to-purple-600 shadow-md shadow-indigo-500/25 ring-1 ring-white/35 motion-safe:transition-[transform,width,height,opacity] motion-safe:duration-300 motion-safe:ease-[cubic-bezier(0.4,0,0.2,1)] motion-reduce:transition-none will-change-[transform,width,height]";
+  "pointer-events-none absolute left-0 top-0 z-0 rounded-xl border border-white/30 bg-linear-to-br from-indigo-500 via-violet-500 to-purple-600 motion-safe:transition-[transform,width,height,opacity] motion-safe:duration-300 motion-safe:ease-[cubic-bezier(0.4,0,0.2,1)] motion-reduce:transition-none will-change-[transform,width,height]";
 
 const TOOLBAR: {
   id: DashboardDisplayMode;
