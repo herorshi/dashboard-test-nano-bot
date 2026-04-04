@@ -262,7 +262,7 @@ function SortableChartsBlock({
           onDragEnd={onChartDragEnd}
         >
           <SortableContext items={order} strategy={rectSortingStrategy}>
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div className="grid gap-4 grid-cols-[repeat(auto-fit,minmax(min(100%,20rem),1fr))] xl:grid-cols-2">
               {order.map((id) => (
                 <SortableChartCard key={id} id={id} />
               ))}
