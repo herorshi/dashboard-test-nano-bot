@@ -316,13 +316,13 @@ export function ResizableChartPlot({
       className={
         fillRegion
           ? "relative w-full min-w-0 min-h-[min(18rem,38svh)] sm:min-h-[min(22rem,42svh)] overflow-visible"
-          : "relative w-full min-w-0 min-h-[min(11rem,28svh)] sm:min-h-[200px] flex-1 overflow-hidden"
+          : "relative w-full min-w-0 min-h-[min(11rem,28svh)] sm:min-h-[200px] flex-1 overflow-visible"
       }
     >
       <div
         ref={innerRef}
         className={`relative min-h-0 rounded-xl ${
-          fillRegion ? "w-full overflow-visible" : "overflow-hidden"
+          fillRegion ? "w-full overflow-visible" : "overflow-visible"
         } ${userSized ? "mx-auto max-w-full shrink-0" : "w-full min-w-0"}`}
         style={
           userSized

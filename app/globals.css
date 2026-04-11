@@ -29,3 +29,16 @@ body {
 .react-datepicker-popper {
   z-index: 50;
 }
+
+/* ApexCharts — อนุญาตให้ tooltip / slice / label ล้นออกนอกกรอบเดิมได้ */
+.apexcharts-overflow-root,
+.apexcharts-overflow-root .apexcharts-canvas,
+.apexcharts-overflow-root .apexcharts-svg,
+.apexcharts-overflow-root svg,
+.apexcharts-overflow-root foreignObject {
+  overflow: visible !important;
+}
+
+.apexcharts-overflow-root .apexcharts-tooltip {
+  z-index: 80 !important;
+}

@@ -48,10 +48,10 @@ export function Widget({
 
   return (
     <div
-      className={`flex w-full min-w-0 max-w-full flex-col rounded-2xl border border-sky-200/90 bg-white/95 shadow-lg shadow-sky-200/40 ring-1 ring-white/90 ${
+      className={`relative flex w-full min-w-0 max-w-full flex-col rounded-2xl border border-sky-200/90 bg-white/95 shadow-lg shadow-sky-200/40 ring-1 ring-white/90 transition-[z-index] hover:z-30 ${
         expand
           ? "h-auto overflow-x-hidden overflow-y-visible"
-          : "h-full min-h-[300px] overflow-hidden"
+          : "h-full min-h-[300px] overflow-visible"
       }`}
       onPointerLeave={onCardPointerLeave}
     >
@@ -79,7 +79,7 @@ export function Widget({
           }`}
         >
           <div
-            className={`flex min-w-0 flex-col ${expand ? "" : "min-h-0 flex-1"}`}
+            className={`flex min-w-0 flex-col overflow-visible ${expand ? "" : "min-h-0 flex-1"}`}
           >
             {suspendContent ? (
               <div

@@ -145,7 +145,7 @@ export function ClientApexChart({
   }, []);
 
   return (
-    <div className="min-h-0 w-full min-w-0 flex-1">
+    <div className="apexcharts-overflow-root min-h-0 w-full min-w-0 flex-1 overflow-visible">
       <ReactApexChart
         chartRef={chartRef}
         height={height}
